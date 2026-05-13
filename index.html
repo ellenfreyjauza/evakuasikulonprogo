@@ -11,19 +11,17 @@
   <style>
     :root {
       --teal: #00796b;
-      --teal-dark: #00574d;
+      --teal-dark: #005f56;
       --orange: #f28c28;
-      --bg: #f4f7f7;
+      --bg: #eef7f7;
       --panel: #ffffff;
       --line: #d7e2e2;
       --text: #17212b;
       --muted: #64748b;
       --red: #d73027;
-      --yellow: #fdae61;
+      --orange-risk: #fdae61;
       --green: #1a9850;
-      --purple: #7b3294;
-      --gray: #94a3b8;
-      --shadow: 0 2px 12px rgba(15, 23, 42, 0.10);
+      --unknown: #94a3b8;
     }
 
     * { box-sizing: border-box; }
@@ -39,28 +37,19 @@
     }
 
     .app {
-      width: 100vw;
       height: 100vh;
       display: grid;
-      grid-template-rows: 78px 1fr;
+      grid-template-rows: 70px 1fr;
     }
 
-    .header {
+    header {
       background: var(--teal);
       color: white;
       border-bottom: 5px solid var(--orange);
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      gap: 14px;
-      padding: 12px 18px;
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
       gap: 12px;
-      min-width: 0;
+      padding: 10px 18px;
     }
 
     .badge {
@@ -73,73 +62,85 @@
       place-items: center;
       font-weight: 800;
       flex: 0 0 auto;
-      box-shadow: var(--shadow);
     }
 
-    .title h1 {
-      margin: 0;
+    h1 {
       font-size: 20px;
-      line-height: 1.15;
+      margin: 0 0 4px;
+      line-height: 1.1;
     }
 
-    .title p {
-      margin: 5px 0 0;
+    header p {
+      margin: 0;
       font-size: 12px;
+      font-weight: 700;
       opacity: .95;
     }
 
-    .layout {
+    main {
       display: grid;
       grid-template-columns: 330px 1fr;
       min-height: 0;
     }
 
-    .sidebar {
-      background: #eef7f7;
-      border-right: 1px solid var(--line);
+    aside {
       overflow-y: auto;
       padding: 12px;
+      border-right: 1px solid #cbdada;
+      background: #f8fcfc;
     }
 
     .panel {
       background: var(--panel);
       border: 1px solid var(--line);
       border-left: 5px solid var(--teal);
-      border-radius: 13px;
+      border-radius: 12px;
       padding: 13px;
-      box-shadow: var(--shadow);
       margin-bottom: 12px;
-      font-size: 12px;
-      line-height: 1.45;
+      box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08);
     }
 
     .panel.orange { border-left-color: var(--orange); background: #fff7ed; }
     .panel h2 {
-      margin: 0 0 10px;
       font-size: 14px;
       color: var(--teal-dark);
+      margin: 0 0 10px;
+    }
+
+    .panel p,
+    .panel li,
+    .panel label {
+      font-size: 12px;
+      line-height: 1.45;
     }
 
     .status-box {
-      background: white;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
       border-radius: 10px;
-      border: 1px solid var(--line);
       padding: 10px;
-      white-space: pre-line;
+      font-size: 12px;
+      line-height: 1.45;
     }
 
-    .layer-row, .legend-row {
+    .status-ok {
+      background: #ecfdf5;
+      border-color: #bbf7d0;
+      color: #166534;
+    }
+
+    .status-error {
+      background: #fff1f2;
+      border-color: #fecdd3;
+      color: #991b1b;
+    }
+
+    .layer-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 8px;
-      margin: 8px 0;
-    }
-
-    .layer-left, .legend-left {
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      font-size: 12px;
     }
 
     input[type="checkbox"] {
@@ -148,20 +149,26 @@
       accent-color: var(--teal);
     }
 
-    .swatch {
-      display: inline-block;
-      width: 22px;
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      margin: 8px 0;
+    }
+
+    .legend-box {
+      width: 20px;
       height: 12px;
       border-radius: 4px;
       border: 1px solid rgba(0,0,0,.2);
       flex: 0 0 auto;
     }
 
-    .high { background: var(--red); }
-    .medium { background: var(--yellow); }
-    .low { background: var(--green); }
-    .veryhigh { background: var(--purple); }
-    .unknown { background: var(--gray); }
+    .risk-high { background: var(--red); }
+    .risk-medium { background: var(--orange-risk); }
+    .risk-low { background: var(--green); }
+    .risk-unknown { background: var(--unknown); }
 
     .map-wrap {
       position: relative;
@@ -174,7 +181,6 @@
       inset: 0;
       width: 100%;
       height: 100%;
-      background: #dbeafe;
     }
 
     .leaflet-popup-content h3 {
@@ -196,75 +202,61 @@
     }
 
     .popup-table td:first-child {
-      font-weight: bold;
+      font-weight: 700;
       color: #334155;
       width: 42%;
     }
 
-    .btn {
-      width: 100%;
-      border: 0;
-      border-radius: 10px;
-      padding: 10px 12px;
-      background: var(--teal);
-      color: white;
-      font-weight: 700;
-      cursor: pointer;
-      margin-top: 8px;
-    }
-
-    .note {
-      color: #475569;
-      font-size: 11.5px;
+    @media (max-width: 900px) {
+      main { grid-template-columns: 1fr; grid-template-rows: 260px 1fr; }
+      aside { order: 2; }
+      .map-wrap { order: 1; min-height: 260px; }
     }
   </style>
 </head>
 
 <body>
   <div class="app">
-    <header class="header">
-      <div class="brand">
-        <div class="badge">SIG</div>
-        <div class="title">
-          <h1>WebGIS Kerawanan Tanah Longsor Kulon Progo</h1>
-          <p>Data kerawanan dibaca dari file <b>kerawanann.json</b></p>
-        </div>
+    <header>
+      <div class="badge">SIG</div>
+      <div>
+        <h1>WebGIS Kerawanan Tanah Longsor Kulon Progo</h1>
+        <p>Layer utama dibaca langsung dari file <b>kerawanann.json</b></p>
       </div>
     </header>
 
-    <main class="layout">
-      <aside class="sidebar">
+    <main>
+      <aside>
         <section class="panel orange">
           <h2>Status Data</h2>
-          <div class="status-box" id="statusBox">Memuat kerawanann.json...</div>
-          <button class="btn" id="zoomButton">Zoom ke Data Kerawanan</button>
+          <div id="statusBox" class="status-box">Memuat file kerawanann.json...</div>
         </section>
 
         <section class="panel">
           <h2>Layer Peta</h2>
           <label class="layer-row">
-            <span class="layer-left">
-              <input type="checkbox" id="toggleKerawanan" checked />
-              <span>Kerawanan dari kerawanann.json</span>
-            </span>
-            <span class="swatch unknown"></span>
+            <span><input type="checkbox" id="toggleKerawanan" checked /> kerawanann.json</span>
+            <span class="legend-box risk-unknown"></span>
           </label>
         </section>
 
         <section class="panel">
-          <h2>Legenda Gridcode</h2>
-          <div class="legend-row"><span class="legend-left"><span class="swatch low"></span>Gridcode 3</span><span>Rendah</span></div>
-          <div class="legend-row"><span class="legend-left"><span class="swatch medium"></span>Gridcode 4</span><span>Sedang</span></div>
-          <div class="legend-row"><span class="legend-left"><span class="swatch red high"></span>Gridcode 5</span><span>Tinggi</span></div>
-          <div class="legend-row"><span class="legend-left"><span class="swatch unknown"></span>Lainnya</span><span>Tidak terbaca</span></div>
+          <h2>Legenda Kerawanan</h2>
+          <div class="legend-item"><span class="legend-box risk-high"></span>Kerawanan sangat tinggi / gridcode 5</div>
+          <div class="legend-item"><span class="legend-box risk-high"></span>Kerawanan tinggi / gridcode 4</div>
+          <div class="legend-item"><span class="legend-box risk-medium"></span>Kerawanan sedang / gridcode 3</div>
+          <div class="legend-item"><span class="legend-box risk-low"></span>Kerawanan rendah / gridcode 1-2</div>
+          <div class="legend-item"><span class="legend-box risk-unknown"></span>Kelas tidak terbaca</div>
         </section>
 
-        <section class="panel">
+        <section class="panel orange">
           <h2>Catatan</h2>
-          <p class="note">
-            File yang kamu upload adalah format <b>Esri JSON</b>, bukan GeoJSON biasa.
-            Script ini sudah mengubah struktur <code>features[].attributes</code> dan
-            <code>features[].geometry.rings</code> supaya bisa dibaca Leaflet.
+          <p>
+            File kamu berformat <b>Esri JSON</b>, bukan GeoJSON. Script ini sudah mengubah
+            <code>geometry.rings</code> dari Esri JSON menjadi layer polygon Leaflet.
+          </p>
+          <p>
+            Pastikan nama file di GitHub sama persis: <b>kerawanann.json</b>.
           </p>
         </section>
       </aside>
@@ -276,155 +268,216 @@
   </div>
 
   <script>
+    const DATA_URL = "kerawanann.json";
+
+    const statusBox = document.getElementById("statusBox");
+
     const map = L.map("map", {
-      center: [-7.75, 110.20],
+      center: [-7.72, 110.20],
       zoom: 11,
       zoomControl: true
     });
 
-    const osm = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 19,
       attribution: "© OpenStreetMap contributors"
     }).addTo(map);
 
-    const carto = L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
-      maxZoom: 19,
-      attribution: "© OpenStreetMap © CARTO"
-    });
-
-    L.control.layers({
-      "OpenStreetMap": osm,
-      "Peta Terang": carto
-    }, null, { collapsed: true, position: "topright" }).addTo(map);
+    L.control.scale({ metric: true, imperial: false, position: "bottomleft" }).addTo(map);
 
     const kerawananLayer = L.layerGroup().addTo(map);
-    let kerawananBounds = null;
 
-    const statusBox = document.getElementById("statusBox");
-    const toggleKerawanan = document.getElementById("toggleKerawanan");
-    const zoomButton = document.getElementById("zoomButton");
-
-    function getColorByGridcode(gridcode) {
-      const code = Number(gridcode);
-      if (code === 5) return "#d73027";
-      if (code === 4) return "#fdae61";
-      if (code === 3) return "#1a9850";
-      return "#94a3b8";
+    function setStatus(html, type) {
+      statusBox.className = "status-box " + (type === "ok" ? "status-ok" : type === "error" ? "status-error" : "");
+      statusBox.innerHTML = html;
     }
 
-    function getLabelByGridcode(gridcode) {
+    function getRiskInfo(gridcode) {
       const code = Number(gridcode);
-      if (code === 5) return "Tinggi";
-      if (code === 4) return "Sedang";
-      if (code === 3) return "Rendah";
-      return "Tidak terbaca";
+
+      if (code === 5) {
+        return { label: "Sangat Tinggi", color: "#a50026", opacity: 0.65 };
+      }
+
+      if (code === 4) {
+        return { label: "Tinggi", color: "#d73027", opacity: 0.58 };
+      }
+
+      if (code === 3) {
+        return { label: "Sedang", color: "#fdae61", opacity: 0.50 };
+      }
+
+      if (code === 2 || code === 1) {
+        return { label: "Rendah", color: "#1a9850", opacity: 0.45 };
+      }
+
+      return { label: "Tidak terbaca", color: "#94a3b8", opacity: 0.45 };
     }
 
-    function popupTable(title, attrs) {
+    function makePopup(title, attributes) {
       let rows = "";
-      Object.keys(attrs).forEach(key => {
-        rows += `<tr><td>${key}</td><td>${attrs[key]}</td></tr>`;
+      Object.keys(attributes || {}).forEach((key) => {
+        rows += `<tr><td>${key}</td><td>${attributes[key]}</td></tr>`;
       });
       return `<h3>${title}</h3><table class="popup-table">${rows}</table>`;
     }
 
-    // Konversi Esri JSON polygon ke GeoJSON FeatureCollection.
-    // File kamu punya pola:
-    // {
-    //   "geometryType": "esriGeometryPolygon",
-    //   "spatialReference": {"wkid": 4326},
-    //   "features": [
-    //     {"attributes": {...}, "geometry": {"rings": [[[lon, lat], ...]]}}
-    //   ]
-    // }
-    function esriJsonToGeoJson(esriJson) {
-      if (!esriJson || !Array.isArray(esriJson.features)) {
-        throw new Error("Format tidak punya array features.");
-      }
-
-      const geojsonFeatures = esriJson.features
-        .filter(feature => feature.geometry && Array.isArray(feature.geometry.rings))
-        .map(feature => {
-          return {
-            type: "Feature",
-            properties: feature.attributes || {},
-            geometry: {
-              type: "Polygon",
-              coordinates: feature.geometry.rings
-            }
-          };
-        });
-
-      return {
-        type: "FeatureCollection",
-        features: geojsonFeatures
-      };
+    function normalizeEsriRingsToLeafletLatLngs(rings) {
+      // Esri rings: [ [ [lng, lat], [lng, lat], ... ] ]
+      // Leaflet polygon: [ [ [lat, lng], [lat, lng], ... ] ]
+      return rings.map((ring) => ring.map((coord) => [coord[1], coord[0]]));
     }
 
-    function drawGeoJson(geojson) {
+    function getAllLayerBounds(layerGroup) {
+      const bounds = L.latLngBounds([]);
+      layerGroup.eachLayer((layer) => {
+        if (layer.getBounds) {
+          bounds.extend(layer.getBounds());
+        } else if (layer.getLatLng) {
+          bounds.extend(layer.getLatLng());
+        }
+      });
+      return bounds;
+    }
+
+    function loadEsriJson(data) {
+      if (!data || !Array.isArray(data.features)) {
+        throw new Error("Format Esri JSON tidak punya array features.");
+      }
+
       kerawananLayer.clearLayers();
 
-      const layer = L.geoJSON(geojson, {
+      let count = 0;
+
+      data.features.forEach((feature, index) => {
+        const attrs = feature.attributes || {};
+        const geometry = feature.geometry || {};
+        const rings = geometry.rings;
+
+        if (!Array.isArray(rings) || rings.length === 0) return;
+
+        const gridcode = attrs.gridcode;
+        const risk = getRiskInfo(gridcode);
+        const latLngRings = normalizeEsriRingsToLeafletLatLngs(rings);
+
+        const polygon = L.polygon(latLngRings, {
+          color: risk.color,
+          weight: 0.6,
+          fillColor: risk.color,
+          fillOpacity: risk.opacity,
+          opacity: 0.9
+        });
+
+        polygon.bindPopup(makePopup("Zona Kerawanan", {
+          "FID": attrs.FID ?? index,
+          "Id": attrs.Id ?? "-",
+          "Gridcode": gridcode ?? "-",
+          "Kelas": risk.label,
+          "Format sumber": "Esri JSON"
+        }));
+
+        polygon.addTo(kerawananLayer);
+        count++;
+      });
+
+      const bounds = getAllLayerBounds(kerawananLayer);
+      if (bounds.isValid()) {
+        map.fitBounds(bounds, { padding: [24, 24] });
+      }
+
+      setStatus(
+        `<b>kerawanann.json berhasil dimuat.</b><br>` +
+        `Format: Esri JSON<br>` +
+        `Jumlah fitur tampil: <b>${count}</b><br>` +
+        `Field kelas: <b>gridcode</b>`,
+        "ok"
+      );
+    }
+
+    function loadGeoJson(data) {
+      kerawananLayer.clearLayers();
+
+      const geoJsonLayer = L.geoJSON(data, {
         style: function(feature) {
-          const gridcode = feature.properties ? feature.properties.gridcode : null;
-          const color = getColorByGridcode(gridcode);
+          const props = feature.properties || {};
+          const gridcode = props.gridcode ?? props.grid_code ?? props.KELAS ?? props.kelas ?? props.gridcode_;
+          const risk = getRiskInfo(gridcode);
+
           return {
-            color: color,
-            weight: 0.7,
-            opacity: 0.9,
-            fillColor: color,
-            fillOpacity: 0.55
+            color: risk.color,
+            weight: 0.6,
+            fillColor: risk.color,
+            fillOpacity: risk.opacity,
+            opacity: 0.9
           };
         },
         onEachFeature: function(feature, layer) {
-          const p = feature.properties || {};
-          const kelas = getLabelByGridcode(p.gridcode);
-          layer.bindPopup(popupTable("Zona Kerawanan", {
-            "FID": p.FID ?? "-",
-            "Id": p.Id ?? "-",
-            "Gridcode": p.gridcode ?? "-",
-            "Kelas": kelas
+          const props = feature.properties || {};
+          const gridcode = props.gridcode ?? props.grid_code ?? props.KELAS ?? props.kelas ?? props.gridcode_;
+          const risk = getRiskInfo(gridcode);
+
+          layer.bindPopup(makePopup("Zona Kerawanan", {
+            ...props,
+            "Kelas terbaca": risk.label,
+            "Format sumber": "GeoJSON"
           }));
         }
-      }).addTo(kerawananLayer);
+      });
 
-      kerawananBounds = layer.getBounds();
-      if (kerawananBounds && kerawananBounds.isValid()) {
-        map.fitBounds(kerawananBounds, { padding: [25, 25] });
+      geoJsonLayer.addTo(kerawananLayer);
+
+      const bounds = geoJsonLayer.getBounds();
+      if (bounds.isValid()) {
+        map.fitBounds(bounds, { padding: [24, 24] });
       }
 
-      const count = geojson.features.length;
-      statusBox.innerHTML =
+      setStatus(
         `<b>kerawanann.json berhasil dimuat.</b><br>` +
-        `Format sumber: Esri JSON Polygon<br>` +
-        `Jumlah fitur: ${count}<br>` +
-        `CRS: WGS84 / EPSG:4326<br><br>` +
-        `Layer sudah dikonversi otomatis ke GeoJSON untuk Leaflet.`;
+        `Format: GeoJSON<br>` +
+        `Jumlah fitur tampil: <b>${data.features.length}</b>`,
+        "ok"
+      );
     }
 
-    fetch("kerawanann.json")
-      .then(response => {
+    async function loadKerawanan() {
+      try {
+        const response = await fetch(DATA_URL + "?v=" + Date.now());
+
         if (!response.ok) {
-          throw new Error(`File tidak ketemu atau gagal dimuat. HTTP ${response.status}`);
+          throw new Error(`File tidak ditemukan / gagal dimuat. HTTP ${response.status}`);
         }
-        return response.json();
-      })
-      .then(data => {
-        const geojson = data.type === "FeatureCollection" ? data : esriJsonToGeoJson(data);
-        drawGeoJson(geojson);
-      })
-      .catch(error => {
+
+        const data = await response.json();
+
+        // PENTING: file kamu Esri JSON, jadi masuk ke blok ini.
+        if (data.geometryType && data.geometryType.includes("esriGeometryPolygon")) {
+          loadEsriJson(data);
+          return;
+        }
+
+        // Cadangan kalau nanti kamu export ulang jadi GeoJSON.
+        if (data.type === "FeatureCollection" && Array.isArray(data.features)) {
+          loadGeoJson(data);
+          return;
+        }
+
+        throw new Error("Format JSON tidak dikenali. Bukan Esri JSON polygon dan bukan GeoJSON FeatureCollection.");
+      } catch (error) {
         console.error(error);
-        statusBox.innerHTML =
+        setStatus(
           `<b>kerawanann.json gagal dimuat.</b><br>` +
           `Error: ${error.message}<br><br>` +
           `Cek:<br>` +
           `1. Nama file harus persis <b>kerawanann.json</b><br>` +
           `2. File harus satu folder dengan <b>index.html</b><br>` +
-          `3. Kalau masih error, buka DevTools Console untuk detail.`;
-      });
+          `3. File sumber boleh Esri JSON polygon atau GeoJSON<br>` +
+          `4. Kalau baru update, tunggu deploy lalu tekan <b>Ctrl + F5</b>`,
+          "error"
+        );
+      }
+    }
 
-    toggleKerawanan.addEventListener("change", function() {
+    document.getElementById("toggleKerawanan").addEventListener("change", function () {
       if (this.checked) {
         map.addLayer(kerawananLayer);
       } else {
@@ -432,17 +485,7 @@
       }
     });
 
-    zoomButton.addEventListener("click", function() {
-      if (kerawananBounds && kerawananBounds.isValid()) {
-        map.fitBounds(kerawananBounds, { padding: [25, 25] });
-      } else {
-        alert("Data kerawanan belum berhasil dimuat.");
-      }
-    });
-
-    window.addEventListener("load", () => {
-      setTimeout(() => map.invalidateSize(), 250);
-    });
+    loadKerawanan();
 
     window.addEventListener("resize", () => map.invalidateSize());
   </script>
