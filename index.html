@@ -697,11 +697,11 @@
         <section class="panel">
           <h2>Layer Peta</h2>
           <div class="layer-grid">
-            <label class="layer-option"><span class="layer-label"><input type="checkbox" id="layerBatas" checked /><span>Koridor Studi Placeholder</span></span><span class="layer-symbol sym-boundary"></span></label>
-            <label class="layer-option"><span class="layer-label"><input type="checkbox" id="layerKerawanan" checked /><span>Zona Kerawanan dari Kerawanan.json</span></span><span class="layer-symbol sym-hazard"></span></label>
-            <label class="layer-option"><span class="layer-label"><input type="checkbox" id="layerPermukiman" checked /><span>Permukiman Terdampak Placeholder</span></span><span class="layer-symbol sym-settlement"></span></label>
-            <label class="layer-option"><span class="layer-label"><input type="checkbox" id="layerFasilitas" checked /><span>Fasilitas Umum Placeholder</span></span><span class="layer-symbol sym-facility"></span></label>
-            <label class="layer-option"><span class="layer-label"><input type="checkbox" id="layerTitikKumpul" checked /><span>Kandidat Titik Kumpul Placeholder</span></span><span class="layer-symbol sym-gathering"></span></label>
+            <label class="layer-option"><span class="layer-label"><input type="checkbox" id="layerBatas" /><span>Batas wilayah (belum ada data)</span></span><span class="layer-symbol sym-boundary"></span></label>
+            <label class="layer-option"><span class="layer-label"><input type="checkbox" id="layerKerawanan" checked /><span>Zona Kerawanan (Kerawanan.json)</span></span><span class="layer-symbol sym-hazard"></span></label>
+            <label class="layer-option"><span class="layer-label"><input type="checkbox" id="layerPermukiman" checked /><span>Permukiman Terdampak Prototype</span></span><span class="layer-symbol sym-settlement"></span></label>
+            <label class="layer-option"><span class="layer-label"><input type="checkbox" id="layerFasilitas" checked /><span>Fasilitas Umum Prototype</span></span><span class="layer-symbol sym-facility"></span></label>
+            <label class="layer-option"><span class="layer-label"><input type="checkbox" id="layerTitikKumpul" checked /><span>Kandidat Titik Kumpul Prototype</span></span><span class="layer-symbol sym-gathering"></span></label>
             <label class="layer-option"><span class="layer-label"><input type="checkbox" id="layerJalurUtama" checked /><span>Jalur Utama Rencana</span></span><span class="layer-symbol sym-main-route"></span></label>
             <label class="layer-option"><span class="layer-label"><input type="checkbox" id="layerJalurAlternatif" checked /><span>Jalur Alternatif Rencana</span></span><span class="layer-symbol sym-alt-route"></span></label>
             <label class="layer-option"><span class="layer-label"><input type="checkbox" id="layerCustomRoute" checked /><span>Rute Hasil Custom</span></span><span class="layer-symbol sym-custom"></span></label>
@@ -795,7 +795,7 @@
           </div>
           <div class="map-info-card status">
             <h2>Status Data</h2>
-            <p>Layer kerawanan diambil dari Kerawanan.json. Layer rute, titik kumpul, fasilitas, dan laporan masih prototype/simulasi.</p>
+            <p>Layer kerawanan utama diambil dari Kerawanan.json. Layer rute, titik kumpul, fasilitas, dan laporan masih prototype/simulasi karena belum ada file data terpisah.</p>
           </div>
         </div>
 
@@ -877,6 +877,7 @@
     const roadStatusLayer = L.layerGroup().addTo(map);
     const searchableMarkers = [];
     let lastRouteSummary = null;
+    let kerawananBounds = null;
 
     function addSearchItem(name, marker, coordinates) {
       searchableMarkers.push({ name: name.toLowerCase(), marker, coordinates });
@@ -920,19 +921,8 @@
       { id: "S10", from: "simpang_selatan", to: "girimulyo_shelter", status: "aktif", risk: 2, name: "Koridor Selatan - Girimulyo" }
     ];
 
-    const koridorStudi = [
-      [-7.620, 110.125], [-7.620, 110.268], [-7.685, 110.275],
-      [-7.800, 110.250], [-7.802, 110.135], [-7.720, 110.115], [-7.620, 110.125]
-    ];
-
-    bindFeatureInfo(L.polygon(koridorStudi, {
-      color: "#006b68", weight: 3, fillColor: "#ffffff", fillOpacity: 0.05
-    }), "Koridor Studi - Placeholder", {
-      "Status data": "Placeholder",
-      "Wilayah": "Girimulyo - Samigaluh - Kalibawang",
-      "Fungsi": "Batas tampilan awal WebGIS",
-      "Catatan": "Bukan batas administrasi final"
-    }).addTo(batasLayer);
+    // Batas koridor dummy dihapus.
+    // Layer batas dibiarkan kosong sampai kamu punya GeoJSON batas wilayah yang asli.
 
     function normalizeText(value) {
       return String(value ?? "").trim().toLowerCase();
@@ -1020,10 +1010,10 @@
         }).addTo(kerawananLayer);
 
         if (geojsonLayer.getBounds && geojsonLayer.getBounds().isValid()) {
-          map.fitBounds(geojsonLayer.getBounds(), { padding: [30, 30] });
+          kerawananBounds = geojsonLayer.getBounds();
+          map.fitBounds(kerawananBounds, { padding: [30, 30] });
         }
 
-        document.querySelector('label[for="layerKerawanan"]');
         console.log("Kerawanan.json berhasil dimuat.");
       } catch (error) {
         console.error("Gagal memuat Kerawanan.json:", error);
@@ -1405,7 +1395,7 @@
     }
 
     function showAllLayers() {
-      setLayerState("layerBatas", batasLayer, true);
+      setLayerState("layerBatas", batasLayer, false);
       setLayerState("layerKerawanan", kerawananLayer, true);
       setLayerState("layerPermukiman", permukimanLayer, true);
       setLayerState("layerFasilitas", fasilitasLayer, true);
@@ -1418,7 +1408,7 @@
     }
 
     function filterRiskLayers() {
-      setLayerState("layerBatas", batasLayer, true);
+      setLayerState("layerBatas", batasLayer, false);
       setLayerState("layerKerawanan", kerawananLayer, true);
       setLayerState("layerPermukiman", permukimanLayer, true);
       setLayerState("layerFasilitas", fasilitasLayer, false);
@@ -1431,7 +1421,7 @@
     }
 
     function filterShelterLayers() {
-      setLayerState("layerBatas", batasLayer, true);
+      setLayerState("layerBatas", batasLayer, false);
       setLayerState("layerKerawanan", kerawananLayer, false);
       setLayerState("layerPermukiman", permukimanLayer, false);
       setLayerState("layerFasilitas", fasilitasLayer, true);
@@ -1444,7 +1434,7 @@
     }
 
     function filterRouteLayers() {
-      setLayerState("layerBatas", batasLayer, true);
+      setLayerState("layerBatas", batasLayer, false);
       setLayerState("layerKerawanan", kerawananLayer, false);
       setLayerState("layerPermukiman", permukimanLayer, true);
       setLayerState("layerFasilitas", fasilitasLayer, false);
