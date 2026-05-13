@@ -175,7 +175,7 @@
         <div class="badge">SIG</div>
         <div>
           <h1>WebGIS Kerawanan Tanah Longsor Kulon Progo</h1>
-          <div class="subtitle">Layer utama diambil langsung dari file Kerawanan.json</div>
+          <div class="subtitle">Layer utama diambil langsung dari file kerawanann.json</div>
         </div>
       </div>
     </header>
@@ -184,13 +184,13 @@
       <aside>
         <section class="panel orange">
           <h2>Status Data</h2>
-          <div class="status" id="statusBox">Memuat Kerawanan.json...</div>
+          <div class="status" id="statusBox">Memuat kerawanann.json...</div>
         </section>
 
         <section class="panel">
           <h2>Layer Peta</h2>
           <label class="layer-row">
-            <span><input type="checkbox" id="toggleKerawanan" checked /> Kerawanan.json</span>
+            <span><input type="checkbox" id="toggleKerawanan" checked /> kerawanann.json</span>
             <span class="box gray"></span>
           </label>
         </section>
@@ -205,7 +205,7 @@
 
         <section class="panel orange">
           <h2>Catatan</h2>
-          <p>Pastikan nama file di GitHub sama persis: <b>Kerawanan.json</b>. Huruf besar-kecil berpengaruh di GitHub Pages.</p>
+          <p>Pastikan nama file di GitHub sama persis: <b>kerawanann.json</b>. Huruf besar-kecil berpengaruh di GitHub Pages.</p>
           <p>File JSON harus berupa GeoJSON dengan koordinat WGS84/EPSG:4326.</p>
         </section>
       </aside>
@@ -320,9 +320,9 @@
 
     async function loadKerawanan() {
       try {
-        setStatus("Memuat <b>Kerawanan.json</b>...");
+        setStatus("Memuat <b>kerawanann.json</b>...");
 
-        const response = await fetch("Kerawanan.json", { cache: "no-store" });
+        const response = await fetch("kerawanann.json", { cache: "no-store" });
         if (!response.ok) {
           throw new Error(`HTTP ${response.status} - ${response.statusText}`);
         }
@@ -374,7 +374,7 @@
 
         const counts = countClasses(geojson);
         setStatus(`
-          <b>Kerawanan.json berhasil dimuat.</b><br>
+          <b>kerawanann.json berhasil dimuat.</b><br>
           Total fitur: ${geojson.features.length}<br>
           Tinggi: ${counts.Tinggi}<br>
           Sedang: ${counts.Sedang}<br>
@@ -382,12 +382,12 @@
           Tidak terbaca: ${counts["Tidak terbaca"]}
         `);
       } catch (error) {
-        console.error("Gagal memuat Kerawanan.json:", error);
+        console.error("Gagal memuat kerawanann.json:", error);
         setStatus(`
-          <b>Kerawanan.json gagal dimuat.</b><br>
+          <b>kerawanann.json gagal dimuat.</b><br>
           Error: ${escapeHTML(error.message)}<br><br>
           Cek:<br>
-          1. Nama file harus persis <b>Kerawanan.json</b><br>
+          1. Nama file harus persis <b>kerawanann.json</b><br>
           2. File harus berada satu folder dengan <b>index.html</b><br>
           3. File harus GeoJSON FeatureCollection<br>
           4. CRS harus WGS84/EPSG:4326
