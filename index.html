@@ -698,7 +698,7 @@
           <h2>Layer Peta</h2>
           <div class="layer-grid">
             <label class="layer-option"><span class="layer-label"><input type="checkbox" id="layerBatas" checked /><span>Koridor Studi Placeholder</span></span><span class="layer-symbol sym-boundary"></span></label>
-            <label class="layer-option"><span class="layer-label"><input type="checkbox" id="layerKerawanan" checked /><span>Zona Kerawanan Placeholder</span></span><span class="layer-symbol sym-hazard"></span></label>
+            <label class="layer-option"><span class="layer-label"><input type="checkbox" id="layerKerawanan" checked /><span>Zona Kerawanan dari Kerawanan.json</span></span><span class="layer-symbol sym-hazard"></span></label>
             <label class="layer-option"><span class="layer-label"><input type="checkbox" id="layerPermukiman" checked /><span>Permukiman Terdampak Placeholder</span></span><span class="layer-symbol sym-settlement"></span></label>
             <label class="layer-option"><span class="layer-label"><input type="checkbox" id="layerFasilitas" checked /><span>Fasilitas Umum Placeholder</span></span><span class="layer-symbol sym-facility"></span></label>
             <label class="layer-option"><span class="layer-label"><input type="checkbox" id="layerTitikKumpul" checked /><span>Kandidat Titik Kumpul Placeholder</span></span><span class="layer-symbol sym-gathering"></span></label>
@@ -747,9 +747,9 @@
 
         <section class="panel">
           <h2>Legenda</h2>
-          <div class="legend-item"><span class="legend-box high"></span>Kerawanan tinggi - contoh</div>
-          <div class="legend-item"><span class="legend-box medium"></span>Kerawanan sedang - contoh</div>
-          <div class="legend-item"><span class="legend-box low"></span>Kerawanan rendah - contoh</div>
+          <div class="legend-item"><span class="legend-box high"></span>Kerawanan tinggi</div>
+          <div class="legend-item"><span class="legend-box medium"></span>Kerawanan sedang</div>
+          <div class="legend-item"><span class="legend-box low"></span>Kerawanan rendah</div>
           <div class="legend-item"><span class="legend-line main-route"></span>Jalur utama rencana</div>
           <div class="legend-item"><span class="legend-line alt-route"></span>Jalur alternatif rencana</div>
           <div class="legend-item"><span class="legend-line custom-route"></span>Rute custom disarankan</div>
@@ -795,7 +795,7 @@
           </div>
           <div class="map-info-card status">
             <h2>Status Data</h2>
-            <p>Belum berbasis DEMNAS/OSM/BPBD/QGIS final. Semua layer analisis dan routing masih placeholder dan perlu diganti GeoJSON hasil pengolahan.</p>
+            <p>Layer kerawanan diambil dari Kerawanan.json. Layer rute, titik kumpul, fasilitas, dan laporan masih prototype/simulasi.</p>
           </div>
         </div>
 
@@ -934,22 +934,108 @@
       "Catatan": "Bukan batas administrasi final"
     }).addTo(batasLayer);
 
-    const zonaKerawanan = [
-      { nama: "Zona Kerawanan Tinggi - Contoh", kelas: "Tinggi", warna: "#d73027", koordinat: [[-7.630,110.135],[-7.625,110.195],[-7.705,110.205],[-7.735,110.145],[-7.630,110.135]] },
-      { nama: "Zona Kerawanan Sedang - Contoh", kelas: "Sedang", warna: "#fdae61", koordinat: [[-7.655,110.195],[-7.650,110.265],[-7.765,110.255],[-7.790,110.185],[-7.655,110.195]] },
-      { nama: "Zona Kerawanan Rendah - Contoh", kelas: "Rendah", warna: "#1a9850", koordinat: [[-7.705,110.125],[-7.715,110.175],[-7.790,110.165],[-7.785,110.120],[-7.705,110.125]] }
-    ];
+    function normalizeText(value) {
+      return String(value ?? "").trim().toLowerCase();
+    }
 
-    zonaKerawanan.forEach((zona) => {
-      bindFeatureInfo(L.polygon(zona.koordinat, {
-        color: zona.warna, weight: 1.5, fillColor: zona.warna, fillOpacity: 0.40
-      }), zona.nama, {
-        "Status data": "Placeholder",
-        "Kelas": `<span class="tag">${zona.kelas}</span>`,
-        "Dasar final": "DEMNAS, curah hujan, tutupan lahan, litologi",
-        "Catatan": "Bukan hasil overlay final"
-      }).addTo(kerawananLayer);
-    });
+    function getProperty(properties, candidates) {
+      for (const key of candidates) {
+        if (properties && properties[key] !== undefined && properties[key] !== null && properties[key] !== "") {
+          return properties[key];
+        }
+      }
+      return "-";
+    }
+
+    function getKerawananClass(properties) {
+      const value = normalizeText(getProperty(properties, [
+        "kelas", "Kelas", "KELAS",
+        "kerawanan", "Kerawanan", "KERAWANAN",
+        "kelas_ker", "KELAS_KER", "KLS_RAWAN",
+        "risk", "Risk", "RISIKO", "risiko",
+        "gridcode", "GRIDCODE", "value", "VALUE"
+      ]));
+
+      if (value.includes("tinggi") || value.includes("high") || value === "3") return "Tinggi";
+      if (value.includes("sedang") || value.includes("medium") || value === "2") return "Sedang";
+      if (value.includes("rendah") || value.includes("low") || value === "1") return "Rendah";
+      return "Tidak diketahui";
+    }
+
+    function getKerawananColor(kelas) {
+      if (kelas === "Tinggi") return "#d73027";
+      if (kelas === "Sedang") return "#fdae61";
+      if (kelas === "Rendah") return "#1a9850";
+      return "#808080";
+    }
+
+    function buildKerawananAttributes(properties, kelas) {
+      const attributes = {
+        "Status data": "Kerawanan.json",
+        "Kelas kerawanan": `<span class="tag">${kelas}</span>`
+      };
+
+      Object.entries(properties || {}).forEach(([key, value]) => {
+        if (value !== null && value !== undefined && value !== "") {
+          attributes[key] = value;
+        }
+      });
+
+      return attributes;
+    }
+
+    async function loadKerawananGeoJSON() {
+      try {
+        const response = await fetch("Kerawanan.json");
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const data = await response.json();
+        kerawananLayer.clearLayers();
+
+        const geojsonLayer = L.geoJSON(data, {
+          style: function (feature) {
+            const kelas = getKerawananClass(feature.properties || {});
+            const color = getKerawananColor(kelas);
+            return {
+              color: color,
+              weight: 1.2,
+              fillColor: color,
+              fillOpacity: 0.45
+            };
+          },
+          onEachFeature: function (feature, layer) {
+            const properties = feature.properties || {};
+            const kelas = getKerawananClass(properties);
+            const nama = getProperty(properties, [
+              "nama", "Nama", "NAMA",
+              "name", "Name", "NAMOBJ",
+              "desa", "Desa", "DESA",
+              "kecamatan", "Kecamatan", "KECAMATAN"
+            ]);
+            const title = nama === "-" ? `Zona Kerawanan ${kelas}` : `Zona Kerawanan ${kelas} - ${nama}`;
+
+            layer.bindPopup(createPopup(title, buildKerawananAttributes(properties, kelas)));
+            layer.on("click", () => updateSelectedInfo(title, buildKerawananAttributes(properties, kelas)));
+          }
+        }).addTo(kerawananLayer);
+
+        if (geojsonLayer.getBounds && geojsonLayer.getBounds().isValid()) {
+          map.fitBounds(geojsonLayer.getBounds(), { padding: [30, 30] });
+        }
+
+        document.querySelector('label[for="layerKerawanan"]');
+        console.log("Kerawanan.json berhasil dimuat.");
+      } catch (error) {
+        console.error("Gagal memuat Kerawanan.json:", error);
+        updateSelectedInfo("Kerawanan.json gagal dimuat", {
+          "File dicari": "Kerawanan.json",
+          "Kemungkinan masalah": "Nama file beda huruf besar/kecil, JSON bukan GeoJSON valid, atau file belum ter-deploy di GitHub Pages.",
+          "Detail error": error.message
+        });
+      }
+    }
+
+    loadKerawananGeoJSON();
 
     const settlements = [
       { nama: "Permukiman Contoh - Samigaluh", koordinat: nodes.samigaluh_origin, wilayah: "Samigaluh" },
@@ -1544,7 +1630,11 @@
     window.addEventListener("load", () => {
       setTimeout(() => {
         map.invalidateSize();
-        map.fitBounds(studyBounds);
+        if (kerawananLayer.getBounds && kerawananLayer.getBounds().isValid()) {
+          map.fitBounds(kerawananLayer.getBounds(), { padding: [30, 30] });
+        } else {
+          map.fitBounds(studyBounds);
+        }
       }, 250);
     });
 
