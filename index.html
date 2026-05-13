@@ -11,7 +11,16 @@
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
   />
 
+  <!-- LEAFLET -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- ROUTING -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css"
+  />
+
+  <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
 
   <style>
 
@@ -168,6 +177,13 @@
       background: var(--blue);
     }
 
+    .point-color {
+      background: #dc2626;
+      border-radius: 50%;
+      width: 10px;
+      height: 10px;
+    }
+
     .map-wrap {
       position: relative;
     }
@@ -218,7 +234,7 @@
 
     <div>
       <h1>WebGIS Kerawanan Tanah Longsor Kulon Progo</h1>
-      <p>Polygon kerawanan dan jalur evakuasi</p>
+      <p>Polygon kerawanan, titik pengungsian, dan jalur evakuasi</p>
     </div>
 
   </header>
@@ -259,6 +275,15 @@
           <span class="legend-box line-color"></span>
         </label>
 
+        <label class="layer-row">
+          <span>
+            <input type="checkbox" id="togglePoint" checked>
+            Titik Evakuasi
+          </span>
+
+          <span class="point-color"></span>
+        </label>
+
       </section>
 
       <section class="panel">
@@ -285,6 +310,11 @@
           Jalur Evakuasi
         </div>
 
+        <div class="legend-item">
+          <span class="point-color"></span>
+          Titik Evakuasi
+        </div>
+
       </section>
 
     </aside>
@@ -301,6 +331,7 @@
 
   const KERAWANAN_URL = "kerawanann.json";
   const LINE_URL = "Line.geojson";
+  const POINT_URL = "Point.geojson";
 
   const statusBox = document.getElementById("statusBox");
 
@@ -318,6 +349,7 @@
 
   const kerawananLayer = L.layerGroup().addTo(map);
   const lineLayer = L.layerGroup().addTo(map);
+  const pointLayer = L.layerGroup().addTo(map);
 
   function setStatus(message, type = "") {
 
@@ -474,16 +506,14 @@
 
     let count = 0;
 
-    if (!data.features) {
-      throw new Error("Format Line.geojson tidak valid");
-    }
-
-    data.features.forEach((feature, index) => {
+    data.features.forEach((feature) => {
 
       const geometry = feature.geometry || {};
-      const attrs = feature.attributes || feature.properties || {};
+      const attrs =
+        feature.attributes ||
+        feature.properties ||
+        {};
 
-      // ESRI JSON LINE
       if (geometry.paths) {
 
         geometry.paths.forEach((path) => {
@@ -496,7 +526,8 @@
           const polyline = L.polyline(latlngs, {
 
             color: "#2563eb",
-            weight: 4
+            weight: 2.5,
+            opacity: 0.9
 
           });
 
@@ -513,7 +544,6 @@
         });
       }
 
-      // GEOJSON LINESTRING
       else if (
         geometry.type === "LineString"
       ) {
@@ -527,7 +557,8 @@
         const polyline = L.polyline(latlngs, {
 
           color: "#2563eb",
-          weight: 4
+          weight: 2.5,
+          opacity: 0.9
 
         });
 
@@ -543,39 +574,54 @@
         count++;
       }
 
-      // GEOJSON MULTILINESTRING
-      else if (
-        geometry.type === "MultiLineString"
-      ) {
+    });
 
-        geometry.coordinates.forEach((line) => {
+    return count;
+  }
 
-          const latlngs = line.map(coord => [
-            coord[1],
-            coord[0]
-          ]);
+  async function loadPoint() {
 
-          const polyline = L.polyline(latlngs, {
+    const response = await fetch(
+      POINT_URL + "?v=" + Date.now()
+    );
 
-            color: "#2563eb",
-            weight: 4
+    if (!response.ok) {
+      return 0;
+    }
 
-          });
+    const data = await response.json();
 
-          polyline.bindPopup(
-            popupTable(
-              "Jalur Evakuasi",
-              attrs
-            )
-          );
+    let count = 0;
 
-          polyline.addTo(lineLayer);
+    L.geoJSON(data, {
 
-          count++;
+      pointToLayer: function(feature, latlng) {
+
+        return L.circleMarker(latlng, {
+
+          radius: 3.5,
+          fillColor: "#dc2626",
+          color: "#ffffff",
+          weight: 1,
+          opacity: 1,
+          fillOpacity: 0.9
+
         });
+      },
+
+      onEachFeature: function(feature, layer) {
+
+        layer.bindPopup(
+          popupTable(
+            "Titik Evakuasi",
+            feature.properties || {}
+          )
+        );
+
+        count++;
       }
 
-    });
+    }).addTo(pointLayer);
 
     return count;
   }
@@ -584,7 +630,8 @@
 
     const group = L.featureGroup([
       kerawananLayer,
-      lineLayer
+      lineLayer,
+      pointLayer
     ]);
 
     const bounds = group.getBounds();
@@ -609,6 +656,9 @@
       const lineCount =
         await loadLine();
 
+      const pointCount =
+        await loadPoint();
+
       fitAllLayers();
 
       setStatus(
@@ -620,7 +670,10 @@
         <b>${polygonCount}</b><br>
 
         Jalur evakuasi:
-        <b>${lineCount}</b>
+        <b>${lineCount}</b><br>
+
+        Titik evakuasi:
+        <b>${pointCount}</b>
         `,
 
         "ok"
@@ -635,14 +688,7 @@
         `
         <b>Gagal memuat data.</b><br><br>
 
-        ${error.message}<br><br>
-
-        Pastikan:
-        <ol>
-          <li>Nama file benar</li>
-          <li>Semua file satu folder</li>
-          <li>Format JSON valid</li>
-        </ol>
+        ${error.message}
         `,
 
         "error"
@@ -672,12 +718,56 @@
       }
     });
 
+  document
+    .getElementById("togglePoint")
+    .addEventListener("change", function() {
+
+      if (this.checked) {
+        map.addLayer(pointLayer);
+      } else {
+        map.removeLayer(pointLayer);
+      }
+    });
+
   loadAllData();
 
   window.addEventListener(
     "resize",
     () => map.invalidateSize()
   );
+
+
+
+  /* =========================================
+     ROUTE EVAKUASI (CICILAN)
+  ========================================= */
+
+  L.Routing.control({
+
+    waypoints: [
+
+      L.latLng(-7.800, 110.150),
+      L.latLng(-7.790, 110.170)
+
+    ],
+
+    routeWhileDragging: false,
+
+    lineOptions: {
+
+      styles: [{
+
+        color: "#16a34a",
+        weight: 4
+
+      }]
+    },
+
+    createMarker: function() {
+      return null;
+    }
+
+  }).addTo(map);
 
 </script>
 
