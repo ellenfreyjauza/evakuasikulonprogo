@@ -1,685 +1,498 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<!-- ============================= -->
+<!-- TAMBAHAN PENYEMPURNAAN WEBGIS -->
+<!-- Tempel di script lama kamu -->
+<!-- ============================= -->
 
-  <title>WebGIS Kerawanan Tanah Longsor Kulon Progo</title>
 
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  />
-
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-  <style>
-
-    :root {
-      --teal: #00796b;
-      --orange: #f28c28;
-      --bg: #eef7f7;
-      --panel: #ffffff;
-      --line: #d7e2e2;
-      --text: #17212b;
-      --red: #d73027;
-      --orange-risk: #fdae61;
-      --green: #1a9850;
-      --unknown: #94a3b8;
-      --blue: #2563eb;
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    html,
-    body {
-      margin: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      font-family: Arial, Helvetica, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-    }
-
-    .app {
-      height: 100vh;
-      display: grid;
-      grid-template-rows: 72px 1fr;
-    }
-
-    header {
-      background: var(--teal);
-      color: white;
-      border-bottom: 5px solid var(--orange);
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      padding: 10px 18px;
-    }
-
-    .badge {
-      width: 50px;
-      height: 50px;
-      border-radius: 14px;
-      background: white;
-      color: var(--teal);
-      display: grid;
-      place-items: center;
-      font-weight: 800;
-      font-size: 18px;
-    }
-
-    h1 {
-      margin: 0;
-      font-size: 21px;
-    }
-
-    header p {
-      margin: 4px 0 0;
-      font-size: 12px;
-      font-weight: 700;
-    }
-
-    main {
-      display: grid;
-      grid-template-columns: 340px 1fr;
-      min-height: 0;
-    }
-
-    aside {
-      overflow-y: auto;
-      padding: 12px;
-      background: #f8fcfc;
-      border-right: 1px solid #cbdada;
-    }
-
-    .panel {
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-left: 5px solid var(--teal);
-      border-radius: 12px;
-      padding: 14px;
-      margin-bottom: 12px;
-    }
-
-    .panel.orange {
-      border-left-color: var(--orange);
-      background: #fff7ed;
-    }
-
-    .status-box {
-      background: white;
-      border: 1px solid #dbe4e4;
-      border-radius: 10px;
-      padding: 10px;
-      font-size: 12px;
-      line-height: 1.5;
-    }
-
-    .status-ok {
-      background: #ecfdf5;
-      color: #166534;
-    }
-
-    .status-error {
-      background: #fff1f2;
-      color: #991b1b;
-    }
-
-    .layer-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 10px;
-      font-size: 12px;
-    }
-
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin: 8px 0;
-      font-size: 12px;
-    }
-
-    .legend-box {
-      width: 20px;
-      height: 12px;
-      border-radius: 4px;
-      border: 1px solid rgba(0,0,0,.2);
-    }
-
-    .risk-high {
-      background: var(--red);
-    }
-
-    .risk-medium {
-      background: var(--orange-risk);
-    }
-
-    .risk-low {
-      background: var(--green);
-    }
-
-    .line-color {
-      background: var(--blue);
-    }
-
-    .map-wrap {
-      position: relative;
-    }
-
-    #map {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-    }
-
-    .popup-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 12px;
-    }
-
-    .popup-table td {
-      border-bottom: 1px solid #e5e7eb;
-      padding: 5px;
-      vertical-align: top;
-    }
-
-    .popup-table td:first-child {
-      font-weight: bold;
-      width: 40%;
-    }
-
-    @media (max-width: 900px) {
-
-      main {
-        grid-template-columns: 1fr;
-        grid-template-rows: 320px 1fr;
-      }
-
-    }
-
-  </style>
-</head>
-
-<body>
-
-<div class="app">
-
-  <header>
-
-    <div class="badge">SIG</div>
-
-    <div>
-      <h1>WebGIS Kerawanan Tanah Longsor Kulon Progo</h1>
-      <p>Polygon kerawanan dan jalur evakuasi</p>
-    </div>
-
-  </header>
-
-  <main>
-
-    <aside>
-
-      <section class="panel orange">
-
-        <h2>Status Data</h2>
-
-        <div id="statusBox" class="status-box">
-          Memuat data...
-        </div>
-
-      </section>
-
-      <section class="panel">
-
-        <h2>Layer Peta</h2>
-
-        <label class="layer-row">
-          <span>
-            <input type="checkbox" id="toggleKerawanan" checked>
-            Polygon Kerawanan
-          </span>
-
-          <span class="legend-box risk-high"></span>
-        </label>
-
-        <label class="layer-row">
-          <span>
-            <input type="checkbox" id="toggleLine" checked>
-            Jalur Evakuasi
-          </span>
-
-          <span class="legend-box line-color"></span>
-        </label>
-
-      </section>
-
-      <section class="panel">
-
-        <h2>Legenda</h2>
-
-        <div class="legend-item">
-          <span class="legend-box risk-high"></span>
-          Kerawanan Tinggi
-        </div>
-
-        <div class="legend-item">
-          <span class="legend-box risk-medium"></span>
-          Kerawanan Sedang
-        </div>
-
-        <div class="legend-item">
-          <span class="legend-box risk-low"></span>
-          Kerawanan Rendah
-        </div>
-
-        <div class="legend-item">
-          <span class="legend-box line-color"></span>
-          Jalur Evakuasi
-        </div>
-
-      </section>
-
-    </aside>
-
-    <section class="map-wrap">
-      <div id="map"></div>
-    </section>
-
-  </main>
-
-</div>
+<!-- ===== 1. ROUTE SUMMARY DINAMIS ===== -->
 
 <script>
 
-  const KERAWANAN_URL = "kerawanann.json";
-  const LINE_URL = "Line.geojson";
+const gatheringPoints = {
+  samigaluh: [-7.658, 110.128],
+  girimulyo: [-7.792, 110.145],
+  kalibawang: [-7.704, 110.234]
+};
 
-  const statusBox = document.getElementById("statusBox");
+const settlementPoints = {
+  samigaluh: [-7.670, 110.120],
+  girimulyo: [-7.800, 110.150],
+  kalibawang: [-7.710, 110.240]
+};
 
-  const map = L.map("map", {
-    center: [-7.8, 110.15],
-    zoom: 11
-  });
+let customRouteLayer = null;
 
-  L.tileLayer(
-    "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+function calculateDistance(a, b) {
+
+  return (
+    map.distance(
+      L.latLng(a[0], a[1]),
+      L.latLng(b[0], b[1])
+    ) / 1000
+  ).toFixed(2);
+
+}
+
+function buildRoute() {
+
+  const originSelect =
+    document.getElementById("routeOrigin").value;
+
+  const destinationSelect =
+    document.getElementById("routeDestination").value;
+
+  const strategy =
+    document.getElementById("routeStrategy").value;
+
+  let origin;
+
+  if (originSelect === "mapCenter") {
+
+    const center = map.getCenter();
+
+    origin = [center.lat, center.lng];
+
+  }
+
+  else if (originSelect === "user") {
+
+    if (userMarker) {
+
+      origin = [
+        userMarker.getLatLng().lat,
+        userMarker.getLatLng().lng
+      ];
+
+    } else {
+
+      alert("Lokasi pengguna belum tersedia");
+      return;
+
+    }
+
+  }
+
+  else {
+
+    origin = settlementPoints[originSelect];
+
+  }
+
+  let destination;
+
+  if (destinationSelect === "nearest") {
+
+    let nearest = null;
+    let nearestDistance = Infinity;
+
+    Object.keys(gatheringPoints).forEach(key => {
+
+      const dist = map.distance(
+        origin,
+        gatheringPoints[key]
+      );
+
+      if (dist < nearestDistance) {
+
+        nearestDistance = dist;
+        nearest = gatheringPoints[key];
+
+      }
+
+    });
+
+    destination = nearest;
+
+  }
+
+  else {
+
+    destination = gatheringPoints[destinationSelect];
+
+  }
+
+  if (customRouteLayer) {
+    map.removeLayer(customRouteLayer);
+  }
+
+  customRouteLayer = L.polyline(
+    [origin, destination],
     {
-      attribution: "© OpenStreetMap"
+      color:
+        strategy === "safe"
+        ? "#16a34a"
+        : strategy === "short"
+        ? "#0057b8"
+        : "#f97316",
+
+      weight: 4,
+      opacity: 0.95,
+      dashArray:
+        strategy === "activeOnly"
+        ? "8,8"
+        : null
     }
   ).addTo(map);
 
-  const kerawananLayer = L.layerGroup().addTo(map);
-  const lineLayer = L.layerGroup().addTo(map);
-
-  function setStatus(message, type = "") {
-
-    statusBox.className =
-      "status-box " +
-      (
-        type === "ok"
-        ? "status-ok"
-        : type === "error"
-        ? "status-error"
-        : ""
-      );
-
-    statusBox.innerHTML = message;
-  }
-
-  function popupTable(title, data) {
-
-    let rows = "";
-
-    Object.keys(data || {}).forEach((key) => {
-
-      rows += `
-        <tr>
-          <td>${key}</td>
-          <td>${data[key]}</td>
-        </tr>
-      `;
-    });
-
-    return `
-      <h3>${title}</h3>
-
-      <table class="popup-table">
-        ${rows}
-      </table>
-    `;
-  }
-
-  function getRiskInfo(gridcode) {
-
-    const code = Number(gridcode);
-
-    if (code >= 4) {
-
-      return {
-        label: "Tinggi",
-        color: "#d73027",
-        opacity: 0.6
-      };
-    }
-
-    if (code === 3) {
-
-      return {
-        label: "Sedang",
-        color: "#fdae61",
-        opacity: 0.5
-      };
-    }
-
-    if (code <= 2) {
-
-      return {
-        label: "Rendah",
-        color: "#1a9850",
-        opacity: 0.45
-      };
-    }
-
-    return {
-      label: "Tidak Terbaca",
-      color: "#94a3b8",
-      opacity: 0.45
-    };
-  }
-
-  function normalizeEsriRings(rings) {
-
-    return rings.map(ring =>
-      ring.map(coord => [
-        coord[1],
-        coord[0]
-      ])
-    );
-  }
-
-  async function loadKerawanan() {
-
-    const response = await fetch(
-      KERAWANAN_URL + "?v=" + Date.now()
-    );
-
-    if (!response.ok) {
-      throw new Error("kerawanann.json gagal dimuat");
-    }
-
-    const data = await response.json();
-
-    let count = 0;
-
-    data.features.forEach((feature, index) => {
-
-      const attrs = feature.attributes || {};
-      const geometry = feature.geometry || {};
-
-      if (!geometry.rings) return;
-
-      const risk = getRiskInfo(attrs.gridcode);
-
-      const latlngs = normalizeEsriRings(
-        geometry.rings
-      );
-
-      const polygon = L.polygon(latlngs, {
-
-        color: risk.color,
-        weight: 0.7,
-        fillColor: risk.color,
-        fillOpacity: risk.opacity
-
-      });
-
-      polygon.bindPopup(
-        popupTable(
-          "Zona Kerawanan",
-          {
-            "FID": attrs.FID ?? index,
-            "Gridcode": attrs.gridcode ?? "-",
-            "Kelas": risk.label
-          }
-        )
-      );
-
-      polygon.addTo(kerawananLayer);
-
-      count++;
-    });
-
-    return count;
-  }
-
-  async function loadLine() {
-
-    const response = await fetch(
-      LINE_URL + "?v=" + Date.now()
-    );
-
-    if (!response.ok) {
-      throw new Error("Line.geojson gagal dimuat");
-    }
-
-    const data = await response.json();
-
-    let count = 0;
-
-    if (!data.features) {
-      throw new Error("Format Line.geojson tidak valid");
-    }
-
-    data.features.forEach((feature, index) => {
-
-      const geometry = feature.geometry || {};
-      const attrs = feature.attributes || feature.properties || {};
-
-      // ESRI JSON LINE
-      if (geometry.paths) {
-
-        geometry.paths.forEach((path) => {
-
-          const latlngs = path.map(coord => [
-            coord[1],
-            coord[0]
-          ]);
-
-          const polyline = L.polyline(latlngs, {
-
-            color: "#2563eb",
-            weight: 4
-
-          });
-
-          polyline.bindPopup(
-            popupTable(
-              "Jalur Evakuasi",
-              attrs
-            )
-          );
-
-          polyline.addTo(lineLayer);
-
-          count++;
-        });
-      }
-
-      // GEOJSON LINESTRING
-      else if (
-        geometry.type === "LineString"
-      ) {
-
-        const latlngs =
-          geometry.coordinates.map(coord => [
-            coord[1],
-            coord[0]
-          ]);
-
-        const polyline = L.polyline(latlngs, {
-
-          color: "#2563eb",
-          weight: 4
-
-        });
-
-        polyline.bindPopup(
-          popupTable(
-            "Jalur Evakuasi",
-            attrs
-          )
-        );
-
-        polyline.addTo(lineLayer);
-
-        count++;
-      }
-
-      // GEOJSON MULTILINESTRING
-      else if (
-        geometry.type === "MultiLineString"
-      ) {
-
-        geometry.coordinates.forEach((line) => {
-
-          const latlngs = line.map(coord => [
-            coord[1],
-            coord[0]
-          ]);
-
-          const polyline = L.polyline(latlngs, {
-
-            color: "#2563eb",
-            weight: 4
-
-          });
-
-          polyline.bindPopup(
-            popupTable(
-              "Jalur Evakuasi",
-              attrs
-            )
-          );
-
-          polyline.addTo(lineLayer);
-
-          count++;
-        });
-      }
-
-    });
-
-    return count;
-  }
-
-  function fitAllLayers() {
-
-    const group = L.featureGroup([
-      kerawananLayer,
-      lineLayer
-    ]);
-
-    const bounds = group.getBounds();
-
-    if (bounds.isValid()) {
-
-      map.fitBounds(bounds, {
-        padding: [20, 20]
-      });
-    }
-  }
-
-  async function loadAllData() {
-
-    try {
-
-      setStatus("Memuat seluruh layer...");
-
-      const polygonCount =
-        await loadKerawanan();
-
-      const lineCount =
-        await loadLine();
-
-      fitAllLayers();
-
-      setStatus(
-
-        `
-        <b>Data berhasil dimuat.</b><br><br>
-
-        Polygon kerawanan:
-        <b>${polygonCount}</b><br>
-
-        Jalur evakuasi:
-        <b>${lineCount}</b>
-        `,
-
-        "ok"
-      );
-
-    } catch (error) {
-
-      console.error(error);
-
-      setStatus(
-
-        `
-        <b>Gagal memuat data.</b><br><br>
-
-        ${error.message}<br><br>
-
-        Pastikan:
-        <ol>
-          <li>Nama file benar</li>
-          <li>Semua file satu folder</li>
-          <li>Format JSON valid</li>
-        </ol>
-        `,
-
-        "error"
-      );
-    }
-  }
-
-  document
-    .getElementById("toggleKerawanan")
-    .addEventListener("change", function() {
-
-      if (this.checked) {
-        map.addLayer(kerawananLayer);
-      } else {
-        map.removeLayer(kerawananLayer);
-      }
-    });
-
-  document
-    .getElementById("toggleLine")
-    .addEventListener("change", function() {
-
-      if (this.checked) {
-        map.addLayer(lineLayer);
-      } else {
-        map.removeLayer(lineLayer);
-      }
-    });
-
-  loadAllData();
-
-  window.addEventListener(
-    "resize",
-    () => map.invalidateSize()
+  const distance =
+    calculateDistance(origin, destination);
+
+  const duration =
+    Math.ceil(distance * 14);
+
+  map.fitBounds(
+    customRouteLayer.getBounds(),
+    { padding: [40, 40] }
   );
+
+  updateBestRoute(
+    strategy,
+    distance,
+    duration
+  );
+
+}
+
+function updateBestRoute(
+  strategy,
+  distance,
+  duration
+) {
+
+  const container =
+    document.getElementById(
+      "bestRouteSummary"
+    );
+
+  const riskText =
+    strategy === "safe"
+    ? "Risiko rendah"
+    : strategy === "short"
+    ? "Risiko sedang"
+    : "Jalur aktif terbatas";
+
+  container.innerHTML = `
+
+    <h3>
+      Rute berhasil dibuat
+    </h3>
+
+    <p>
+      Strategi rute:
+      <b>${strategy}</b>
+    </p>
+
+    <div class="best-route-grid">
+
+      <div class="best-route-metric">
+        <strong>${distance} km</strong>
+        <span>Estimasi jarak</span>
+      </div>
+
+      <div class="best-route-metric">
+        <strong>${duration} menit</strong>
+        <span>Waktu tempuh</span>
+      </div>
+
+    </div>
+
+    <br>
+
+    <span class="risk-badge risk-low">
+      ${riskText}
+    </span>
+
+  `;
+
+}
+
+document
+.getElementById("buildRouteButton")
+.addEventListener(
+  "click",
+  buildRoute
+);
 
 </script>
 
-</body>
-</html>
+
+
+<!-- ===== 2. FITUR LOKASI SAYA ===== -->
+
+<script>
+
+let userMarker = null;
+
+document
+.getElementById("locateButton")
+.addEventListener(
+  "click",
+  () => {
+
+    if (!navigator.geolocation) {
+
+      alert(
+        "Browser tidak mendukung GPS"
+      );
+
+      return;
+
+    }
+
+    navigator.geolocation.getCurrentPosition(
+
+      position => {
+
+        const lat =
+          position.coords.latitude;
+
+        const lng =
+          position.coords.longitude;
+
+        if (userMarker) {
+          map.removeLayer(userMarker);
+        }
+
+        userMarker = L.circleMarker(
+          [lat, lng],
+          {
+            radius: 7,
+            fillColor: "#2563eb",
+            color: "#ffffff",
+            weight: 2,
+            fillOpacity: 1
+          }
+        ).addTo(map);
+
+        userMarker.bindPopup(
+          "<b>Lokasi Anda</b>"
+        );
+
+        map.setView([lat, lng], 15);
+
+      },
+
+      () => {
+
+        alert(
+          "Lokasi gagal didapatkan"
+        );
+
+      }
+
+    );
+
+  }
+
+);
+
+</script>
+
+
+
+<!-- ===== 3. RESET PETA ===== -->
+
+<script>
+
+document
+.getElementById("resetButton")
+.addEventListener(
+  "click",
+  () => {
+
+    map.setView(
+      [-7.74, 110.18],
+      11
+    );
+
+  }
+);
+
+</script>
+
+
+
+<!-- ===== 4. FILTER LAYER ===== -->
+
+<script>
+
+document
+.getElementById("filterRouteButton")
+.addEventListener(
+  "click",
+  () => {
+
+    if (map.hasLayer(lineLayer)) {
+
+      map.removeLayer(lineLayer);
+
+    }
+
+    else {
+
+      map.addLayer(lineLayer);
+
+    }
+
+  }
+);
+
+document
+.getElementById("filterShelterButton")
+.addEventListener(
+  "click",
+  () => {
+
+    if (map.hasLayer(pointLayer)) {
+
+      map.removeLayer(pointLayer);
+
+    }
+
+    else {
+
+      map.addLayer(pointLayer);
+
+    }
+
+  }
+);
+
+</script>
+
+
+
+<!-- ===== 5. COPY KOORDINAT ===== -->
+
+<script>
+
+document
+.getElementById("copyViewButton")
+.addEventListener(
+  "click",
+  () => {
+
+    const center =
+      map.getCenter();
+
+    const text = `
+Lat:
+${center.lat.toFixed(6)}
+
+Lng:
+${center.lng.toFixed(6)}
+`;
+
+    navigator.clipboard
+    .writeText(text);
+
+    alert(
+      "Koordinat berhasil disalin"
+    );
+
+  }
+);
+
+</script>
+
+
+
+<!-- ===== 6. SAFE MODE ===== -->
+
+<script>
+
+document
+.getElementById("safeModeButton")
+.addEventListener(
+  "click",
+  () => {
+
+    map.eachLayer(layer => {
+
+      if (
+        layer instanceof L.Polygon
+      ) {
+
+        layer.setStyle({
+
+          fillOpacity: 0.55,
+          opacity: 1
+
+        });
+
+      }
+
+    });
+
+    alert(
+      "Mode darurat aktif"
+    );
+
+  }
+);
+
+</script>
+
+
+
+<!-- ===== 7. SEARCH LOKASI ===== -->
+
+<script>
+
+document
+.getElementById("searchButton")
+.addEventListener(
+  "click",
+  () => {
+
+    const value =
+      document
+      .getElementById("searchInput")
+      .value
+      .toLowerCase();
+
+    if (
+      value.includes("samigaluh")
+    ) {
+
+      map.setView(
+        [-7.67, 110.12],
+        14
+      );
+
+    }
+
+    else if (
+      value.includes("girimulyo")
+    ) {
+
+      map.setView(
+        [-7.80, 110.15],
+        14
+      );
+
+    }
+
+    else if (
+      value.includes("kalibawang")
+    ) {
+
+      map.setView(
+        [-7.71, 110.24],
+        14
+      );
+
+    }
+
+    else {
+
+      alert(
+        "Lokasi tidak ditemukan"
+      );
+
+    }
+
+  }
+);
+
+</script>
