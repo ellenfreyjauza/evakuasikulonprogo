@@ -1,355 +1,63 @@
-<!-- ============================= -->
-<!-- TAMBAHAN PENYEMPURNAAN WEBGIS -->
-<!-- Tempel di script lama kamu -->
-<!-- ============================= -->
-
-
-<!-- ===== 1. ROUTE SUMMARY DINAMIS ===== -->
+<!-- ===================================================== -->
+<!-- ===== 8. FILTER POLYGON KERAWANAN ===== -->
+<!-- ===================================================== -->
 
 <script>
 
-const gatheringPoints = {
-  samigaluh: [-7.658, 110.128],
-  girimulyo: [-7.792, 110.145],
-  kalibawang: [-7.704, 110.234]
-};
-
-const settlementPoints = {
-  samigaluh: [-7.670, 110.120],
-  girimulyo: [-7.800, 110.150],
-  kalibawang: [-7.710, 110.240]
-};
-
-let customRouteLayer = null;
-
-function calculateDistance(a, b) {
-
-  return (
-    map.distance(
-      L.latLng(a[0], a[1]),
-      L.latLng(b[0], b[1])
-    ) / 1000
-  ).toFixed(2);
-
-}
-
-function buildRoute() {
-
-  const originSelect =
-    document.getElementById("routeOrigin").value;
-
-  const destinationSelect =
-    document.getElementById("routeDestination").value;
-
-  const strategy =
-    document.getElementById("routeStrategy").value;
-
-  let origin;
-
-  if (originSelect === "mapCenter") {
-
-    const center = map.getCenter();
-
-    origin = [center.lat, center.lng];
-
-  }
-
-  else if (originSelect === "user") {
-
-    if (userMarker) {
-
-      origin = [
-        userMarker.getLatLng().lat,
-        userMarker.getLatLng().lng
-      ];
-
-    } else {
-
-      alert("Lokasi pengguna belum tersedia");
-      return;
-
-    }
-
-  }
-
-  else {
-
-    origin = settlementPoints[originSelect];
-
-  }
-
-  let destination;
-
-  if (destinationSelect === "nearest") {
-
-    let nearest = null;
-    let nearestDistance = Infinity;
-
-    Object.keys(gatheringPoints).forEach(key => {
-
-      const dist = map.distance(
-        origin,
-        gatheringPoints[key]
-      );
-
-      if (dist < nearestDistance) {
-
-        nearestDistance = dist;
-        nearest = gatheringPoints[key];
-
-      }
-
-    });
-
-    destination = nearest;
-
-  }
-
-  else {
-
-    destination = gatheringPoints[destinationSelect];
-
-  }
-
-  if (customRouteLayer) {
-    map.removeLayer(customRouteLayer);
-  }
-
-  customRouteLayer = L.polyline(
-    [origin, destination],
-    {
-      color:
-        strategy === "safe"
-        ? "#16a34a"
-        : strategy === "short"
-        ? "#0057b8"
-        : "#f97316",
-
-      weight: 4,
-      opacity: 0.95,
-      dashArray:
-        strategy === "activeOnly"
-        ? "8,8"
-        : null
-    }
-  ).addTo(map);
-
-  const distance =
-    calculateDistance(origin, destination);
-
-  const duration =
-    Math.ceil(distance * 14);
-
-  map.fitBounds(
-    customRouteLayer.getBounds(),
-    { padding: [40, 40] }
-  );
-
-  updateBestRoute(
-    strategy,
-    distance,
-    duration
-  );
-
-}
-
-function updateBestRoute(
-  strategy,
-  distance,
-  duration
-) {
-
-  const container =
-    document.getElementById(
-      "bestRouteSummary"
-    );
-
-  const riskText =
-    strategy === "safe"
-    ? "Risiko rendah"
-    : strategy === "short"
-    ? "Risiko sedang"
-    : "Jalur aktif terbatas";
-
-  container.innerHTML = `
-
-    <h3>
-      Rute berhasil dibuat
-    </h3>
-
-    <p>
-      Strategi rute:
-      <b>${strategy}</b>
-    </p>
-
-    <div class="best-route-grid">
-
-      <div class="best-route-metric">
-        <strong>${distance} km</strong>
-        <span>Estimasi jarak</span>
-      </div>
-
-      <div class="best-route-metric">
-        <strong>${duration} menit</strong>
-        <span>Waktu tempuh</span>
-      </div>
-
-    </div>
-
-    <br>
-
-    <span class="risk-badge risk-low">
-      ${riskText}
-    </span>
-
-  `;
-
-}
-
 document
-.getElementById("buildRouteButton")
-.addEventListener(
-  "click",
-  buildRoute
-);
-
-</script>
-
-
-
-<!-- ===== 2. FITUR LOKASI SAYA ===== -->
-
-<script>
-
-let userMarker = null;
-
-document
-.getElementById("locateButton")
+.getElementById("filterRiskButton")
 .addEventListener(
   "click",
   () => {
 
-    if (!navigator.geolocation) {
+    if (map.hasLayer(kerawananLayer)) {
 
-      alert(
-        "Browser tidak mendukung GPS"
-      );
-
-      return;
-
-    }
-
-    navigator.geolocation.getCurrentPosition(
-
-      position => {
-
-        const lat =
-          position.coords.latitude;
-
-        const lng =
-          position.coords.longitude;
-
-        if (userMarker) {
-          map.removeLayer(userMarker);
-        }
-
-        userMarker = L.circleMarker(
-          [lat, lng],
-          {
-            radius: 7,
-            fillColor: "#2563eb",
-            color: "#ffffff",
-            weight: 2,
-            fillOpacity: 1
-          }
-        ).addTo(map);
-
-        userMarker.bindPopup(
-          "<b>Lokasi Anda</b>"
-        );
-
-        map.setView([lat, lng], 15);
-
-      },
-
-      () => {
-
-        alert(
-          "Lokasi gagal didapatkan"
-        );
-
-      }
-
-    );
-
-  }
-
-);
-
-</script>
-
-
-
-<!-- ===== 3. RESET PETA ===== -->
-
-<script>
-
-document
-.getElementById("resetButton")
-.addEventListener(
-  "click",
-  () => {
-
-    map.setView(
-      [-7.74, 110.18],
-      11
-    );
-
-  }
-);
-
-</script>
-
-
-
-<!-- ===== 4. FILTER LAYER ===== -->
-
-<script>
-
-document
-.getElementById("filterRouteButton")
-.addEventListener(
-  "click",
-  () => {
-
-    if (map.hasLayer(lineLayer)) {
-
-      map.removeLayer(lineLayer);
+      map.removeLayer(kerawananLayer);
 
     }
 
     else {
+
+      map.addLayer(kerawananLayer);
+
+    }
+
+  }
+);
+
+</script>
+
+
+
+<!-- ===================================================== -->
+<!-- ===== 9. TAMPILKAN SEMUA LAYER ===== -->
+<!-- ===================================================== -->
+
+<script>
+
+document
+.getElementById("showAllButton")
+.addEventListener(
+  "click",
+  () => {
+
+    if (!map.hasLayer(kerawananLayer)) {
+
+      map.addLayer(kerawananLayer);
+
+    }
+
+    if (!map.hasLayer(lineLayer)) {
 
       map.addLayer(lineLayer);
 
     }
 
-  }
-);
-
-document
-.getElementById("filterShelterButton")
-.addEventListener(
-  "click",
-  () => {
-
-    if (map.hasLayer(pointLayer)) {
-
-      map.removeLayer(pointLayer);
-
-    }
-
-    else {
+    if (
+      typeof pointLayer !== "undefined"
+      &&
+      !map.hasLayer(pointLayer)
+    ) {
 
       map.addLayer(pointLayer);
 
@@ -362,33 +70,19 @@ document
 
 
 
-<!-- ===== 5. COPY KOORDINAT ===== -->
+<!-- ===================================================== -->
+<!-- ===== 10. PRINT PETA ===== -->
+<!-- ===================================================== -->
 
 <script>
 
 document
-.getElementById("copyViewButton")
+.getElementById("printButton")
 .addEventListener(
   "click",
   () => {
 
-    const center =
-      map.getCenter();
-
-    const text = `
-Lat:
-${center.lat.toFixed(6)}
-
-Lng:
-${center.lng.toFixed(6)}
-`;
-
-    navigator.clipboard
-    .writeText(text);
-
-    alert(
-      "Koordinat berhasil disalin"
-    );
+    window.print();
 
   }
 );
@@ -397,26 +91,116 @@ ${center.lng.toFixed(6)}
 
 
 
-<!-- ===== 6. SAFE MODE ===== -->
+<!-- ===================================================== -->
+<!-- ===== 11. HAPUS RUTE ===== -->
+<!-- ===================================================== -->
 
 <script>
 
 document
-.getElementById("safeModeButton")
+.getElementById("clearRouteButton")
 .addEventListener(
   "click",
   () => {
 
-    map.eachLayer(layer => {
+    if (customRouteLayer) {
 
-      if (
-        layer instanceof L.Polygon
-      ) {
+      map.removeLayer(customRouteLayer);
+
+      customRouteLayer = null;
+
+    }
+
+    document
+    .getElementById(
+      "bestRouteSummary"
+    )
+    .innerHTML = `
+      Belum ada rute dibuat
+    `;
+
+  }
+);
+
+</script>
+
+
+
+<!-- ===================================================== -->
+<!-- ===== 12. ZOOM KE SELURUH DATA ===== -->
+<!-- ===================================================== -->
+
+<script>
+
+document
+.getElementById("zoomAllButton")
+.addEventListener(
+  "click",
+  () => {
+
+    const group = L.featureGroup([
+      kerawananLayer,
+      lineLayer
+    ]);
+
+    const bounds =
+      group.getBounds();
+
+    if (bounds.isValid()) {
+
+      map.fitBounds(
+        bounds,
+        {
+          padding: [30, 30]
+        }
+      );
+
+    }
+
+  }
+);
+
+</script>
+
+
+
+<!-- ===================================================== -->
+<!-- ===== 13. MODE JALUR AKTIF ===== -->
+<!-- ===================================================== -->
+
+<script>
+
+let roadMode = false;
+
+document
+.getElementById("roadStatusButton")
+.addEventListener(
+  "click",
+  () => {
+
+    roadMode = !roadMode;
+
+    lineLayer.eachLayer(layer => {
+
+      if (roadMode) {
 
         layer.setStyle({
 
-          fillOpacity: 0.55,
-          opacity: 1
+          color: "#16a34a",
+          dashArray: "10,6",
+          weight: 4
+
+        });
+
+      }
+
+      else {
+
+        layer.setStyle({
+
+          color: "#2563eb",
+          dashArray: null,
+          weight: 4
 
         });
 
@@ -424,9 +208,81 @@ document
 
     });
 
-    alert(
-      "Mode darurat aktif"
-    );
+  }
+);
+
+</script>
+
+
+
+<!-- ===================================================== -->
+<!-- ===== 14. TITIK TERDEKAT ===== -->
+<!-- ===================================================== -->
+
+<script>
+
+document
+.getElementById("nearestShelterButton")
+.addEventListener(
+  "click",
+  () => {
+
+    if (!userMarker) {
+
+      alert(
+        "Aktifkan lokasi terlebih dahulu"
+      );
+
+      return;
+
+    }
+
+    if (
+      typeof pointLayer === "undefined"
+    ) {
+
+      alert(
+        "Layer titik belum tersedia"
+      );
+
+      return;
+
+    }
+
+    let nearest = null;
+
+    let nearestDistance =
+      Infinity;
+
+    pointLayer.eachLayer(layer => {
+
+      const dist =
+        map.distance(
+          userMarker.getLatLng(),
+          layer.getLatLng()
+        );
+
+      if (
+        dist < nearestDistance
+      ) {
+
+        nearestDistance = dist;
+        nearest = layer;
+
+      }
+
+    });
+
+    if (nearest) {
+
+      map.setView(
+        nearest.getLatLng(),
+        16
+      );
+
+      nearest.openPopup();
+
+    }
 
   }
 );
@@ -435,62 +291,118 @@ document
 
 
 
-<!-- ===== 7. SEARCH LOKASI ===== -->
+<!-- ===================================================== -->
+<!-- ===== 15. INFORMASI POSISI MAP ===== -->
+<!-- ===================================================== -->
 
 <script>
 
-document
-.getElementById("searchButton")
-.addEventListener(
-  "click",
+map.on(
+  "moveend",
   () => {
 
-    const value =
-      document
-      .getElementById("searchInput")
-      .value
-      .toLowerCase();
+    const center =
+      map.getCenter();
 
-    if (
-      value.includes("samigaluh")
-    ) {
+    const zoom =
+      map.getZoom();
 
-      map.setView(
-        [-7.67, 110.12],
-        14
+    const info =
+`
+Lat:
+${center.lat.toFixed(5)}
+
+Lng:
+${center.lng.toFixed(5)}
+
+Zoom:
+${zoom}
+`;
+
+    const box =
+      document.getElementById(
+        "mapInfo"
       );
+
+    if (box) {
+
+      box.innerText = info;
 
     }
 
-    else if (
-      value.includes("girimulyo")
-    ) {
+  }
+);
 
-      map.setView(
-        [-7.80, 110.15],
-        14
-      );
+</script>
 
-    }
 
-    else if (
-      value.includes("kalibawang")
-    ) {
 
-      map.setView(
-        [-7.71, 110.24],
-        14
-      );
+<!-- ===================================================== -->
+<!-- ===== 16. SCALE BAR ===== -->
+<!-- ===================================================== -->
 
-    }
+<script>
 
-    else {
+L.control.scale({
+  imperial: false
+}).addTo(map);
 
-      alert(
-        "Lokasi tidak ditemukan"
-      );
+</script>
 
-    }
+
+
+<!-- ===================================================== -->
+<!-- ===== 17. KLIK KOORDINAT ===== -->
+<!-- ===================================================== -->
+
+<script>
+
+map.on(
+  "click",
+  function(e) {
+
+    const lat =
+      e.latlng.lat.toFixed(6);
+
+    const lng =
+      e.latlng.lng.toFixed(6);
+
+    L.popup()
+
+      .setLatLng(e.latlng)
+
+      .setContent(
+        `
+        <b>Koordinat</b><br>
+        Lat: ${lat}<br>
+        Lng: ${lng}
+        `
+      )
+
+      .openOn(map);
+
+  }
+);
+
+</script>
+
+
+
+<!-- ===================================================== -->
+<!-- ===== 18. AUTO CLOSE POPUP ===== -->
+<!-- ===================================================== -->
+
+<script>
+
+map.on(
+  "popupopen",
+  function(e) {
+
+    setTimeout(() => {
+
+      map.closePopup(e.popup);
+
+    }, 6000);
 
   }
 );
